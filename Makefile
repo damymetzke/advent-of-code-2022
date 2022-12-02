@@ -1,3 +1,2 @@
-01:
-	go build -o bin/01 days/01/main.go
-	bin/01
+build:
+	go build -o bin/1 days/1/main.go
