@@ -22,10 +22,10 @@ func main() {
 
 	elves := strings.Split(input, "\n\n")
 
-	max := 0
+	maxElves := [3]int{0, 0, 0}
 	for _, elve := range elves {
 		caloryStrings := strings.Split(elve, "\n")
-		total := 0
+		elveCalories := 0
 		for _, caloryString := range caloryStrings {
       if caloryString == "" {
         continue
@@ -36,13 +36,20 @@ func main() {
 				log.Fatalf("Could not parse as integer '%v':\n  * %v", caloryString, err)
 			}
 
-			total += calories
+			elveCalories += calories
 		}
 
-		if max < total {
-			max = total
-		}
+    for i := 0; i < 3; i++ {
+      if maxElves[i] < elveCalories {
+        swap := maxElves[i]
+        maxElves[i] = elveCalories
+        elveCalories = swap
+      }
+    }
 	}
 
-	fmt.Println(max)
+  fmt.Println("=-= PART 1 =-=")
+	fmt.Println(maxElves[0])
+  fmt.Println("=-= PART 2 =-=")
+  fmt.Println(maxElves[0] + maxElves[1] + maxElves[2])
 }
