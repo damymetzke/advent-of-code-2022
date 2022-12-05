@@ -32,6 +32,7 @@ func main() {
 
   width := (len(topLines[0])+1)/4
 	top := make([][]rune, width)
+	top2 := make([][]rune, width)
 
 
 
@@ -44,6 +45,7 @@ func main() {
       }
 
       top[j] = append(top[j], rune(item))
+      top2[j] = append(top2[j], rune(item))
     }
   }
 
@@ -69,9 +71,11 @@ func main() {
     //fmt.Printf("(%v), %v -> %v\n", amount, from, to)
     for i:= int64(0); i < amount; i++ {
       top[to] = append(top[to], top[from][len(top[from]) - 1 - int(i)])
+      top2[to] = append(top2[to], top2[from][len(top2[from]) - int(amount - i)])
     }
 
     top[from] = top[from][:len(top[from]) - int(amount)]
+    top2[from] = top2[from][:len(top2[from]) - int(amount)]
 	}
 
 	fmt.Println("=-= PART 1 =-=")
@@ -80,4 +84,8 @@ func main() {
   }
   fmt.Println()
 	fmt.Println("=-= PART 2 =-=")
+  for _, stack := range top2 {
+    fmt.Print(string(stack[len(stack) - 1]))
+  }
+  fmt.Println()
 }
