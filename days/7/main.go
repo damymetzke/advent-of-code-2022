@@ -11,7 +11,6 @@ import (
 type DirData struct {
 	fileSizes        int64
 	childDirectories []string
-  parsedChildren   bool
 }
 
 func GetInput() string {
@@ -46,11 +45,8 @@ func addSize(dirs *map[string]DirData, cwd []string, size int64) {
 func EvaluateDir(dirs *map[string]DirData, cwd []string) int64 {
   key := strings.Join(cwd, "/")
   data := (*dirs)[key]
-  if !data.parsedChildren {
-    for _, childDir := range data.childDirectories {
-      data.fileSizes += EvaluateDir(dirs, append(cwd, childDir))
-    }
-    data.parsedChildren = true
+  for _, childDir := range data.childDirectories {
+    data.fileSizes += EvaluateDir(dirs, append(cwd, childDir))
   }
 
   (*dirs)[key] = data
