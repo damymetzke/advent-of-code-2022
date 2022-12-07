@@ -11,6 +11,7 @@ import (
 type DirData struct {
 	fileSizes        int64
 	childDirectories []string
+  parsedChildren   bool
 }
 
 func GetInput() string {
@@ -45,14 +46,43 @@ func addSize(dirs *map[string]DirData, cwd []string, size int64) {
 func EvaluateDir(dirs *map[string]DirData, cwd []string) int64 {
   key := strings.Join(cwd, "/")
   data := (*dirs)[key]
-  for _, childDir := range data.childDirectories {
-    data.fileSizes += EvaluateDir(dirs, append(cwd, childDir))
+  if !data.parsedChildren {
+    for _, childDir := range data.childDirectories {
+      data.fileSizes += EvaluateDir(dirs, append(cwd, childDir))
+    }
+    data.parsedChildren = true
   }
-  data.childDirectories = []string{}
 
   (*dirs)[key] = data
 
   return data.fileSizes
+}
+
+func findSmallestDir(dirs *map[string]DirData, key string, required int64) (bool, int64) {
+  data := (*dirs)[key]
+  if data.fileSizes < required {
+    return false, 0
+  }
+
+  minResult := false
+  minSize := int64(0)
+
+  for _, childDir := range data.childDirectories {
+    result, size := findSmallestDir(dirs, key + "/" + childDir, required)
+    if !result {
+      continue
+    }
+    minResult = true
+    if size < minSize {
+      minSize = size
+    }
+  }
+
+  if !minResult {
+    return true, data.fileSizes
+  }
+
+  return true, minSize
 }
 
 func main() {
@@ -92,6 +122,7 @@ func main() {
       continue
 		}
 
+    // Add the file size to the total
     size, err := strconv.ParseInt(strings.Split(line, " ")[0], 10, 64)
     if err != nil {
       log.Fatalf("Error:\n%v", err)
@@ -100,15 +131,23 @@ func main() {
     addSize(&dirs, currentWorkingDir, size)
 	}
 
-  var total int64
+  var total, min int64
+  required := EvaluateDir(&dirs, []string{}) - 40000000
 
-  for key := range dirs {
-    size := EvaluateDir(&dirs, strings.Split(key, "/"))
+  for _, dir := range dirs {
+    size := dir.fileSizes
     if size <= 100000 {
       total += size
     }
+    if size > required {
+      if size < min || min == 0 {
+        min = size
+      }
+    }
   }
+
 	fmt.Println("=-= PART 1 =-=")
   fmt.Println(total)
 	fmt.Println("=-= PART 2 =-=")
+  fmt.Println(min)
 }
