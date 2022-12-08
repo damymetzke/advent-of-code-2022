@@ -19,6 +19,14 @@ type LookDirection struct {
 	deltaY        int
 }
 
+func abs(val int) int {
+  if val < 0 {
+    return -val
+  }
+
+  return val
+} 
+
 func GetInput() string {
 	data, err := os.ReadFile("input/8")
 	if err != nil {
@@ -66,6 +74,7 @@ func main() {
 	height := len(grid)
 
 	var result int
+  var maxScenicScore int
 
 	for i, row := range grid {
 		for j, tree := range row {
@@ -96,6 +105,9 @@ func main() {
 				return directions[i].amountToCheck < directions[j].amountToCheck
 			})
 
+      success := false
+      scenicScore := 1
+
       // Test all directions
 		labelDirection:
 			for _, direction := range directions {
@@ -103,19 +115,28 @@ func main() {
           // In this case a tree is blocking the view
           // So try the next direction
 					if grid[y][x] >= tree {
+            scenicScore *= abs(y - i) + abs(x - j)
 						continue labelDirection
 					}
 				}
-
+        // By pure luck I already found this value in part 1
+        scenicScore *= direction.amountToCheck
         // If at least 1 loop was successful there is a clear path
         // The tree is visible so add 1 to the result
-				result++
-				break
+        success = true
 			}
+
+      if scenicScore > maxScenicScore {
+        maxScenicScore = scenicScore
+      }
+      if success {
+        result++
+      }
 		}
 	}
 
 	fmt.Println("=-= PART 1 =-=")
 	fmt.Println(result)
 	fmt.Println("=-= PART 2 =-=")
+	fmt.Println(maxScenicScore)
 }
