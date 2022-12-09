@@ -75,9 +75,12 @@ func followDelta(x, y, tX, tY int) (int, int) {
 func main() {
 	lines := strings.Split(GetInput(), "\n")
 
-	var x, y, tX, tY int
+	var x, y [10]int
 
-	visited := PositionSet{{
+	visited1 := PositionSet{{
+		x: 0,
+		y: 0}: {}}
+	visited9 := PositionSet{{
 		x: 0,
 		y: 0}: {}}
 
@@ -90,19 +93,35 @@ func main() {
 
 		// Movement of tail can be calculated for every multiple orthogonal steps
 		// The result will be the same
-		x += dX * int(amount)
-		y += dY * int(amount)
+		// Edit part 2, the behavior has changed a bit,
+		// I won't be repeating this logic for the tails
+		x[0] += dX * int(amount)
+		y[0] += dY * int(amount)
 
-    // Move the tail until in range
-		for !inRange(x, y, tX, tY) {
-			fX, fY := followDelta(x, y, tX, tY)
-			tX += fX
-			tY += fY
-			visited[Position{x: tX, y: tY}] = struct{}{}
+		// Move the tails until in range
+		for !inRange(x[0], y[0], x[1], y[1]) {
+
+      // Move other tails
+			for i := 1; i < 10; i++ {
+				// Next step
+				if inRange(x[i-1], y[i-1], x[i], y[i]) {
+					break
+				}
+        
+        fX, fY := followDelta(x[i - 1], y[i - 1], x[i], y[i])
+        x[i] += fX
+        y[i] += fY
+        if i == 1 {
+          visited1[Position{x: x[i], y: y[i]}] = struct{}{}
+        } else if i == 9 {
+          visited9[Position{x: x[i], y: y[i]}] = struct{}{}
+        }
+			}
 		}
 	}
 
 	fmt.Println("=-= PART 1 =-=")
-  fmt.Println(len(visited))
+	fmt.Println(len(visited1))
 	fmt.Println("=-= PART 2 =-=")
+	fmt.Println(len(visited9))
 }
