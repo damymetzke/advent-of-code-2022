@@ -113,6 +113,42 @@ func ParseMonkey(lines []string, i int) Monkey {
 	}
 }
 
+func applyMonkeyBusiness(monkey Monkey, monkeys *[]Monkey, reduceWorry bool, fullModulo int) Monkey {
+	// Consider each item
+	for _, item := range monkey.items {
+		// Transform worry
+		switch monkey.operationType {
+		case Multiply:
+			item *= monkey.operationAmount
+		case Add:
+			item += monkey.operationAmount
+		case Squared:
+			item = item * item
+		default:
+			log.Fatalf("Invalid state:\n%v", monkey)
+		}
+
+		// Monkey is bored
+		if reduceWorry {
+			item /= 3
+		}
+
+    item %= fullModulo
+
+		if item%monkey.testDivisibleBy == 0 {
+			(*monkeys)[monkey.resultTrueMonkey].items = append((*monkeys)[monkey.resultTrueMonkey].items, item)
+		} else {
+			(*monkeys)[monkey.resultFalseMonkey].items = append((*monkeys)[monkey.resultFalseMonkey].items, item)
+		}
+
+		// Increment inspectednum
+		monkey.inspectedNum++
+	}
+
+	monkey.items = []int{}
+	return monkey
+}
+
 func main() {
 	lines := strings.Split(GetInput(), "\n")
 	numMonkeys := (len(lines) + 1) / 7
@@ -133,44 +169,42 @@ func main() {
 
 	wait.Wait()
 
+	monkeys2 := make([]Monkey, numMonkeys)
+	copy(monkeys2, monkeys)
+
+  // By multiplying each testDivisibleBy,
+  // I will get a big number that I can safely use modulo arithmatic on.
+  // Simply put the operations '+', '*', and '^2' remain stable within modulo.
+  // Assume N and M are the same.
+  // So doing all operations, and then mod N, is the same as doing mod M between each step.
+  // This also works for any value of M which is a multiple of N.
+  // By multiplying all modulos I get a value that can be used to "cap" the value.
+  // If I understand the problem correctly, it's implying that there will be a integer overflow.
+  // This can be used to keep acurate results
+  // If you don't know this trick solving this problem would bevery difficult
+  fullModulo := 1
+  for _, monkey := range monkeys {
+    fullModulo *= monkey.testDivisibleBy
+  }
+
 	// Go for 20 rounds
 	for i := 0; i < 20; i++ {
 		// Each monkey gets a round
 		for j, monkey := range monkeys {
-			// Consider each item
-			for _, item := range monkey.items {
-				// Transform worry
-				switch monkey.operationType {
-				case Multiply:
-					item *= monkey.operationAmount
-				case Add:
-					item += monkey.operationAmount
-				case Squared:
-					item = item * item
-				default:
-					log.Fatalf("Invalid state:\n%v", monkey)
-				}
-
-				// Monkey is bored
-				item /= 3
-
-				if item%monkey.testDivisibleBy == 0 {
-					monkeys[monkey.resultTrueMonkey].items = append(monkeys[monkey.resultTrueMonkey].items, item)
-				} else {
-					monkeys[monkey.resultFalseMonkey].items = append(monkeys[monkey.resultFalseMonkey].items, item)
-				}
-
-				// Increment inspectednum
-				monkey.inspectedNum++
-			}
-
-			monkey.items = []int{}
 			// I initially forgot to do this.
 			// This duplicated all items.
 			// And exponental growth is very real.
 			// This caused my memory to overflow and my desktop to crash.
 			// :)
-			monkeys[j] = monkey
+			monkeys[j] = applyMonkeyBusiness(monkey, &monkeys, true, fullModulo)
+		}
+	}
+	// Go for 10000 rounds
+	for i := 0; i < 10000; i++ {
+		// Each monkey gets a round
+		for j, monkey := range monkeys2 {
+			// I crashed my desktop again
+			monkeys2[j] = applyMonkeyBusiness(monkey, &monkeys2, false, fullModulo)
 		}
 	}
 
@@ -178,18 +212,34 @@ func main() {
 
 	for _, monkey := range monkeys {
 		max := monkey.inspectedNum
-    if max > maxInspected[0] {
-      maxInspected[0], max = max, maxInspected[0]
-    }
+		if max > maxInspected[0] {
+			maxInspected[0], max = max, maxInspected[0]
+		}
 
-    if max > maxInspected[1] {
-      maxInspected[1] = max
-    }
+		if max > maxInspected[1] {
+			maxInspected[1] = max
+		}
 	}
 
-  monkeyBusiness := maxInspected[0] * maxInspected[1]
+	monkeyBusiness := maxInspected[0] * maxInspected[1]
+
+	maxInspected2 := [2]int{0, 0}
+
+	for _, monkey := range monkeys2 {
+		max := monkey.inspectedNum
+		if max > maxInspected2[0] {
+			maxInspected2[0], max = max, maxInspected2[0]
+		}
+
+		if max > maxInspected2[1] {
+			maxInspected2[1] = max
+		}
+	}
+
+	monkeyBusiness2 := maxInspected2[0] * maxInspected2[1]
 
 	fmt.Println("=-= PART 1 =-=")
 	fmt.Println(monkeyBusiness)
 	fmt.Println("=-= PART 2 =-=")
+	fmt.Println(monkeyBusiness2)
 }
