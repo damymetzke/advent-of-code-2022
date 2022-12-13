@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -44,23 +45,26 @@ func GetPossibleDirections(position Position) [4]Position {
 }
 
 func VisualizeGrid(grid [][]byte, visited [][]bool, clear bool) {
+  var result strings.Builder
 	if clear {
 		for range grid {
-			fmt.Print("\x1b[1A\x1b[K")
+			result.WriteString("\x1b[1A\x1b[K")
 		}
 	}
 
+
 	for y, row := range grid {
 		for x, value := range row {
-			colorValue := 255 - ((value - 97) * 94)
+			colorValue := strconv.FormatInt(int64(200 - ((value - 97) * 5)), 10)
 			if visited[y][x] {
-				fmt.Printf("\x1b[38;2;%v;255;%vm#\x1b[0m", colorValue, colorValue)
+        result.WriteString("\x1b[38;2;" + colorValue + ";255;" + colorValue +  "m#\x1b[0m")
 			} else {
-				fmt.Printf("\x1b[38;2;255;%v;%vm.\x1b[0m", colorValue, colorValue)
+        result.WriteString("\x1b[38;2;255;" + colorValue + ";" + colorValue +  "m#\x1b[0m")
 			}
 		}
-		fmt.Println()
+    result.WriteString("\n")
 	}
+  fmt.Print(result.String())
 
 	time.Sleep(5 * time.Millisecond)
 
