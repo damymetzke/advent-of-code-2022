@@ -66,9 +66,10 @@ func VisualizeGrid(grid [][]byte, visited [][]bool, clear bool) {
 
 }
 
-func FindShortestPath(start, end Position, grid [][]byte, visualize bool) int {
+// For part 2 I changed the direction
+func FindShortestPath(start, end Position, grid [][]byte, visualize bool, findLowestInstead bool) int {
 	var steps int
-	currentPositions := []Position{start}
+	currentPositions := []Position{end}
 	var nextPositions []Position
 
 	visited := make([][]bool, len(grid))
@@ -81,7 +82,7 @@ func FindShortestPath(start, end Position, grid [][]byte, visualize bool) int {
 		VisualizeGrid(grid, visited, false)
 	}
 
-	visited[start.y][start.x] = true
+	visited[end.y][end.x] = true
 
 	for {
 		if len(currentPositions) == 0 {
@@ -103,12 +104,17 @@ func FindShortestPath(start, end Position, grid [][]byte, visualize bool) int {
 				}
 
 				// Check if unreachable
-				if grid[possible.y][possible.x] > height+1 {
+				if grid[possible.y][possible.x] < height-1 {
 					continue
 				}
 
+        // Check for lowest
+        if findLowestInstead && grid[possible.y][possible.x] == 'a' {
+          return steps
+        }
+
 				// Check for end
-				if possible == end {
+				if possible == start {
 					return steps
 				}
 
@@ -157,9 +163,12 @@ func main() {
 	}
 
 	fmt.Println("=-= PART 1 =-=")
-  fmt.Println(FindShortestPath(start, end, grid, false))
+  fmt.Println(FindShortestPath(start, end, grid, false, false))
 	fmt.Println("=-= PART 2 =-=")
+  fmt.Println(FindShortestPath(start, end, grid, false, true))
 
-	fmt.Println("=-= Visual =-=")
-	FindShortestPath(start, end, grid, true)
+	fmt.Println("=-= Visual 1 =-=")
+	FindShortestPath(start, end, grid, true, false)
+  fmt.Println("=-= Visual 2 =-=")
+	FindShortestPath(start, end, grid, true, true)
 }
