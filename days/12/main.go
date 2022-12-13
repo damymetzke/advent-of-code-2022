@@ -48,7 +48,7 @@ func VisualizeGrid(grid [][]byte, visited [][]bool, clear bool) {
   var result strings.Builder
 	if clear {
 		for range grid {
-			result.WriteString("\x1b[1A\x1b[K")
+			result.WriteString("\x1b[1A")
 		}
 	}
 
@@ -71,10 +71,11 @@ func VisualizeGrid(grid [][]byte, visited [][]bool, clear bool) {
 }
 
 // For part 2 I changed the direction
-func FindShortestPath(start, end Position, grid [][]byte, visualize bool, findLowestInstead bool) int {
+func FindShortestPath(start, end Position, grid [][]byte, visualize bool) (int, int) {
 	var steps int
 	currentPositions := []Position{end}
 	var nextPositions []Position
+  var firstLowest int
 
 	visited := make([][]bool, len(grid))
 	gridWidth := len(grid[0])
@@ -113,13 +114,16 @@ func FindShortestPath(start, end Position, grid [][]byte, visualize bool, findLo
 				}
 
         // Check for lowest
-        if findLowestInstead && grid[possible.y][possible.x] == 'a' {
-          return steps
+        if firstLowest == 0 && grid[possible.y][possible.x] == 'a' {
+          firstLowest = steps
         }
 
 				// Check for end
 				if possible == start {
-					return steps
+          if firstLowest == 0 {
+            return steps, steps
+          }
+					return steps, firstLowest
 				}
 
 				// Add next position
@@ -135,7 +139,7 @@ func FindShortestPath(start, end Position, grid [][]byte, visualize bool, findLo
 		nextPositions = []Position{}
 	}
 
-	return 0
+	return 0, 0
 }
 
 func main() {
@@ -166,13 +170,12 @@ func main() {
 		}
 	}
 
+  result1, result2 := FindShortestPath(start, end, grid, false)
 	fmt.Println("=-= PART 1 =-=")
-  fmt.Println(FindShortestPath(start, end, grid, false, false))
+  fmt.Println(result1)
 	fmt.Println("=-= PART 2 =-=")
-  fmt.Println(FindShortestPath(start, end, grid, false, true))
+  fmt.Println(result2)
 
-	fmt.Println("=-= Visual 1 =-=")
-	FindShortestPath(start, end, grid, true, false)
-  fmt.Println("=-= Visual 2 =-=")
-	FindShortestPath(start, end, grid, true, true)
+	fmt.Println("=-= Visual =-=")
+	FindShortestPath(start, end, grid, true)
 }
