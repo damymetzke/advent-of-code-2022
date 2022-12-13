@@ -12,6 +12,7 @@ import (
 type Position struct {
 	x int
 	y int
+  direction byte
 }
 
 func GetInput() string {
@@ -28,23 +29,27 @@ func GetPossibleDirections(position Position) [4]Position {
 		{
 			x: position.x - 1,
 			y: position.y,
+      direction: '>',
 		},
 		{
 			x: position.x + 1,
 			y: position.y,
+      direction: '<',
 		},
 		{
 			x: position.x,
 			y: position.y - 1,
+      direction: 'V',
 		},
 		{
 			x: position.x,
 			y: position.y + 1,
+      direction: '^',
 		},
 	}
 }
 
-func VisualizeGrid(grid [][]byte, visited [][]bool, clear bool) {
+func VisualizeGrid(grid [][]byte, visited [][]bool, display [][]byte, clear bool) {
   var result strings.Builder
 	if clear {
 		for range grid {
@@ -57,7 +62,7 @@ func VisualizeGrid(grid [][]byte, visited [][]bool, clear bool) {
 		for x, value := range row {
 			colorValue := strconv.FormatInt(int64(200 - ((value - 97) * 5)), 10)
 			if visited[y][x] {
-        result.WriteString("\x1b[38;2;" + colorValue + ";255;" + colorValue +  "m#\x1b[0m")
+        result.WriteString("\x1b[38;2;" + colorValue + ";255;" + colorValue +  "m" + string(display[y][x]) + "\x1b[0m")
 			} else {
         result.WriteString("\x1b[38;2;255;" + colorValue + ";" + colorValue +  "m#\x1b[0m")
 			}
@@ -70,6 +75,33 @@ func VisualizeGrid(grid [][]byte, visited [][]bool, clear bool) {
 
 }
 
+func VisualizePath(grid [][]byte, visited [][]bool, display [][]byte, start Position) {
+	incrementalDisplay := make([][]byte, len(grid))
+	for i := range incrementalDisplay {
+		incrementalDisplay[i] = make([]byte, len(grid[0]))
+    for j := range incrementalDisplay[i] {
+      incrementalDisplay[i][j] = '#'
+    }
+  }
+  currentPosition := start
+  incrementalDisplay[currentPosition.y][currentPosition.x] = display[currentPosition.y][currentPosition.x]
+  for(display[currentPosition.y][currentPosition.x]) != 'E' {
+    VisualizeGrid(grid, visited, incrementalDisplay, true)
+
+    switch display[currentPosition.y][currentPosition.x] {
+    case '>':
+      currentPosition.x += 1
+    case '<':
+      currentPosition.x -= 1
+    case 'V':
+      currentPosition.y += 1
+    case '^':
+      currentPosition.y -= 1
+    }
+    incrementalDisplay[currentPosition.y][currentPosition.x] = display[currentPosition.y][currentPosition.x]
+  }
+}
+
 // For part 2 I changed the direction
 func FindShortestPath(start, end Position, grid [][]byte, visualize bool) (int, int) {
 	var steps int
@@ -78,13 +110,28 @@ func FindShortestPath(start, end Position, grid [][]byte, visualize bool) (int, 
   var firstLowest int
 
 	visited := make([][]bool, len(grid))
+	display := make([][]byte, len(grid))
+	staticDisplay := make([][]byte, len(grid))
 	gridWidth := len(grid[0])
 	for i := range visited {
 		visited[i] = make([]bool, gridWidth)
+    if !visualize {
+      continue
+    }
+
+		display[i] = make([]byte, gridWidth)
+		staticDisplay[i] = make([]byte, gridWidth)
+    for j := range staticDisplay[i] {
+      display[i][j] = '#'
+      staticDisplay[i][j] = '#'
+    }
 	}
 
+
 	if visualize {
-		VisualizeGrid(grid, visited, false)
+    display[end.y][end.x] = 'E'
+    display[start.y][start.x] = 'S'
+		VisualizeGrid(grid, visited, staticDisplay, false)
 	}
 
 	visited[end.y][end.x] = true
@@ -119,7 +166,11 @@ func FindShortestPath(start, end Position, grid [][]byte, visualize bool) (int, 
         }
 
 				// Check for end
-				if possible == start {
+				if possible.x == start.x && possible.y == start.y {
+          if visualize {
+            display[possible.y][possible.x] = possible.direction
+            VisualizePath(grid, visited, display, start)
+          }
           if firstLowest == 0 {
             return steps, steps
           }
@@ -129,11 +180,16 @@ func FindShortestPath(start, end Position, grid [][]byte, visualize bool) (int, 
 				// Add next position
 				visited[possible.y][possible.x] = true
 				nextPositions = append(nextPositions, possible)
+        if !visualize {
+          continue
+        }
+
+        display[possible.y][possible.x] = possible.direction
 			}
 		}
 
 		if visualize {
-			VisualizeGrid(grid, visited, true)
+			VisualizeGrid(grid, visited, staticDisplay, true)
 		}
 		currentPositions = nextPositions
 		nextPositions = []Position{}
@@ -159,12 +215,14 @@ func main() {
 				start = Position{
 					x,
 					y,
+          'S',
 				}
 			} else if value == 'E' {
 				grid[y][x] = 'z'
 				end = Position{
 					x,
 					y,
+          'E',
 				}
 			}
 		}
