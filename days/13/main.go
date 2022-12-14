@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -160,8 +161,35 @@ func main() {
 		}()
 	}
 
+  sorted := make([]Data, len(left) * 2 + 2)
+
+  for i, leftValue := range left {
+    sorted[i*2] = leftValue
+    sorted[i*2 + 1] = right[i]
+  }
+
+  sorted[len(sorted) - 1] = ParseLine("[[2]]")
+  sorted[len(sorted) - 2] = ParseLine("[[6]]")
+
+  sort.Slice(sorted, func(i, j int) bool {
+    return IsInRightOrder(sorted[i], sorted[j]) == 1
+  })
+
+  decoderKey := 1
+
+  for i, value := range sorted {
+    if len(value.array) == 1 {
+      if len(value.array[0].array) == 1 {
+        if value.array[0].array[0].value == 2 || value.array[0].array[0].value == 6 {
+          decoderKey *= i + 1
+        }
+      }
+    }
+  }
+
   wait.Wait()
 	fmt.Println("=-= PART 1 =-=")
   fmt.Println(result)
 	fmt.Println("=-= PART 2 =-=")
+  fmt.Println(decoderKey)
 }
