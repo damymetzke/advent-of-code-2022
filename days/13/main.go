@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 type Data struct {
@@ -35,21 +36,21 @@ func ParseNumber(line string, offset int) (int, Data) {
 		log.Fatalf("Could not parse integer from '%v'\n  with offset '%v'", line, offset)
 	}
 
-	return end, Data {
-    isArray: false,
-    value: int(parsed),
-    array: []Data{},
-  }
+	return end, Data{
+		isArray: false,
+		value:   int(parsed),
+		array:   []Data{},
+	}
 }
 
 func ParseArray(line string, offset int) (int, Data) {
 	result := []Data{}
 
 	for line[offset] != ']' {
-    offset++
-    if line[offset] == ']' {
-      break
-    }
+		offset++
+		if line[offset] == ']' {
+			break
+		}
 		var value Data
 		if line[offset] == '[' {
 			offset, value = ParseArray(line, offset)
@@ -72,15 +73,64 @@ func ParseLine(line string) Data {
 	return result
 }
 
+func IsInRightOrder(left, right Data) int {
+  for i := 0; i < len(left.array) && i < len(right.array); i++ {
+    leftValue := left.array[i]
+    rightValue := right.array[i]
+
+    // Compare numbers
+    if !leftValue.isArray && !rightValue.isArray {
+      if leftValue.value == rightValue.value {
+        continue
+      } else if leftValue.value < rightValue.value {
+        return 1
+      }
+      return -1
+    }
+
+    // Convert left value if not array
+    if !leftValue.isArray {
+      leftValue = Data{
+        isArray: true,
+        value: 0,
+        array: []Data{leftValue},
+      }
+    }
+    // Convert right value if not array
+    if !rightValue.isArray {
+      rightValue = Data{
+        isArray: true,
+        value: 0,
+        array: []Data{rightValue},
+      }
+    }
+
+    // Compare arrays
+    result := IsInRightOrder(leftValue, rightValue)
+    if result == 0 {
+      continue
+    }
+    return result
+  }
+
+  // Which one ran out?
+  if len(left.array) == len(right.array) {
+    return 0
+  } else if len(left.array) < len(right.array) {
+    return 1
+  }
+  return -1
+}
+
 func main() {
 	input := strings.Split(GetInput(), "\n")
 
 	var wait sync.WaitGroup
 
-	left := make([]Data, len(input)/3)
-	right := make([]Data, len(input)/3)
+	left := make([]Data, len(input)/3+1)
+	right := make([]Data, len(input)/3+1)
 
-	for i := 0; i < len(input)/3; i++ {
+	for i := 0; i < len(input)/3+1; i++ {
 		wait.Add(1)
 		num := i
 
@@ -93,6 +143,25 @@ func main() {
 
 	wait.Wait()
 
+	var result int64
+
+	for i := range left {
+    index := int64(i + 1)
+		leftValue := left[i]
+		rightValue := right[i]
+		wait.Add(1)
+
+		go func() {
+			if IsInRightOrder(leftValue, rightValue) == 1 {
+				atomic.AddInt64(&result, index)
+			} else if IsInRightOrder(leftValue, rightValue) == 0 {
+      }
+			wait.Done()
+		}()
+	}
+
+  wait.Wait()
 	fmt.Println("=-= PART 1 =-=")
+  fmt.Println(result)
 	fmt.Println("=-= PART 2 =-=")
 }
