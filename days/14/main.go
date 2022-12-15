@@ -283,27 +283,35 @@ func main() {
 		sand[i] = make([]bool, len(grid[0]))
 	}
 
-	var restingSand int
+	var restingSand, restingSandUntilBottom int
+  var foundBottom bool
 
 	for {
 		nextSand := FindNextSandPosition(grid, sand, left, depth)
 		if nextSand.y == depth - 1{
-			break
+      foundBottom = true
 		}
+    if nextSand.y == -1 {
+      break
+    }
 		sand[nextSand.y][nextSand.x-left] = true
-		restingSand++
+    if !foundBottom {
+      restingSandUntilBottom++
+    }
+    restingSand++
+
 	}
 
 	fmt.Println("=-= PART 1 =-=")
-	fmt.Println(restingSand)
+	fmt.Println(restingSandUntilBottom)
 	fmt.Println("=-= PART 2 =-=")
+	fmt.Println(restingSand)
 	fmt.Println("=-= Visual =-=")
 
 	sandVisual := make(Grid, len(grid))
 	for i := range grid {
 		sandVisual[i] = make([]bool, len(grid[0]))
 	}
-  fmt.Println(len(sandVisual[0]), len(grid[0]))
 
 	fmt.Print(GridToString(grid, sandVisual, 3, depth))
 
