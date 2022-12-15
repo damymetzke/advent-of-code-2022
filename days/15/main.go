@@ -92,6 +92,43 @@ func IsInRange(data SensorData, point Point) bool {
 		GetDistance(data.sensorPosition, data.closestBeacon)
 }
 
+func FindRangesY(datas []SensorData, y int) []Range {
+	ranges := make([]Range, len(datas))
+
+	for i, data := range datas {
+		ranges[i] = GetRangeY(data, y)
+	}
+
+  sort.Slice(ranges, func(i, j int) bool {
+    return ranges[i].min < ranges[j].min
+  })
+
+
+  var result []Range
+
+  for i := 0; i < len(ranges); i++ {
+    if ranges[i].max < ranges[i].min {
+      continue
+    }
+
+    if len(result) == 0 {
+      result = []Range{ranges[i]}
+    }
+
+    last := len(result) - 1
+    if result[last].max < ranges[i].min {
+      result = append(result, ranges[i])
+      continue
+    }
+
+    if ranges[i].max > result[last].max {
+      result[last].max = ranges[i].max
+    }
+  }
+
+  return result
+}
+
 func main() {
 	lines := strings.Split(GetInput(), "\n")
 	datas := make([]SensorData, len(lines))
@@ -109,39 +146,7 @@ func main() {
 		}
 	}
 
-	ranges := make([]Range, len(datas))
-
-	for i, data := range datas {
-		ranges[i] = GetRangeY(data, 2000000)
-	}
-
-  sort.Slice(ranges, func(i, j int) bool {
-    return ranges[i].min < ranges[j].min
-  })
-
-
-  var combinedRanges []Range
-
-  for i := 0; i < len(ranges); i++ {
-    if ranges[i].max < ranges[i].min {
-      continue
-    }
-      fmt.Println(combinedRanges, ranges[i])
-
-    if len(combinedRanges) == 0 {
-      combinedRanges = []Range{ranges[i]}
-    }
-
-    last := len(combinedRanges) - 1
-    if combinedRanges[last].max < ranges[i].min {
-      combinedRanges = append(combinedRanges, ranges[i])
-      continue
-    }
-
-    if ranges[i].max > combinedRanges[last].max {
-      combinedRanges[last].max = ranges[i].max
-    }
-  }
+  combinedRanges := FindRangesY(datas, 2000000)
 
   var numCannotContainBeacon int
 
@@ -149,7 +154,29 @@ func main() {
     numCannotContainBeacon += value.max - value.min
   }
 
+  var result int
+
+  for y := 0; y <= 4000000; y++ {
+    combinedRanges := FindRangesY(datas, y)
+    i := 0
+    for combinedRanges[i].max < 0 {
+      i++
+    }
+
+    if combinedRanges[i].min < 0 && combinedRanges[i].max > 4000000 {
+      continue
+    }
+
+    if combinedRanges[i].min == 1 {
+      result = 0
+    }
+
+    result = (combinedRanges[i].max + 1) * 4000000 + y
+    break
+  }
+
 	fmt.Println("=-= PART 1 =-=")
   fmt.Println(numCannotContainBeacon)
 	fmt.Println("=-= PART 2 =-=")
+  fmt.Println(result)
 }
