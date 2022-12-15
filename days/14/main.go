@@ -114,13 +114,13 @@ func GridToString(grid, sand Grid, columns int) string {
 		for j := 0; j < columns; j++ {
 			row := grid[i+j*offset]
 			for k, value := range row {
-        sand := sand[i+j*offset][k]
+				sand := sand[i+j*offset][k]
 				if value {
 					result.WriteString("\x1b[48;2;68;64;60m#\x1b[0m")
 				} else if sand {
-          //fa cc 15
+					//fa cc 15
 					result.WriteString("\x1b[38;2;250;204;21m\x1b[48;2;68;64;60mO\x1b[0m")
-        } else {
+				} else {
 					result.WriteString("\x1b[48;2;87;83;78m.\x1b[0m")
 				}
 			}
@@ -183,24 +183,28 @@ func FindNextSandPosition(stone, sand Grid, left, bottom int) Point {
 		y: 0,
 	}
 
+	if sand[0][500-left] {
+		return Point{
+			0,
+			-1,
+		}
+	}
+
 	for {
-    if next.y >= bottom {
-      return Point{
-        0,
-        -1,
-      }
-    }
-		if !stone[next.y+1][next.x - left] && !sand[next.y+1][next.x - left] {
+		if next.y == bottom - 1 {
+			break
+		}
+		if !stone[next.y+1][next.x-left] && !sand[next.y+1][next.x-left] {
 			next.y++
 			continue
 		}
 
-		if !stone[next.y+1][next.x-1 - left] && !sand[next.y+1][next.x-1 - left] {
+		if !stone[next.y+1][next.x-1-left] && !sand[next.y+1][next.x-1-left] {
 			next.x--
 			next.y++
 			continue
 		}
-		if !stone[next.y+1][next.x+1 - left] && !sand[next.y+1][next.x+1 - left] {
+		if !stone[next.y+1][next.x+1-left] && !sand[next.y+1][next.x+1-left] {
 			next.x++
 			next.y++
 			continue
@@ -241,7 +245,7 @@ func main() {
 	wait.Wait()
 
 	width := totalBounds.right - totalBounds.left
-	depth := totalBounds.bottom + 1
+	depth := totalBounds.bottom + 2
 	left := totalBounds.left
 
 	grid := make(Grid, depth+1)
@@ -277,19 +281,19 @@ func main() {
 		sand[i] = make([]bool, len(grid[0]))
 	}
 
-  var restingSand int
+	var restingSand int
 
-  for {
-    nextSand := FindNextSandPosition(grid, sand, left, depth)
-    if nextSand.y == -1 {
-      break
-    }
-    sand[nextSand.y][nextSand.x - left] = true
-    restingSand++
-  }
+	for {
+		nextSand := FindNextSandPosition(grid, sand, left, depth)
+		if nextSand.y == depth - 1{
+			break
+		}
+		sand[nextSand.y][nextSand.x-left] = true
+		restingSand++
+	}
 
 	fmt.Println("=-= PART 1 =-=")
-  fmt.Println(restingSand)
+	fmt.Println(restingSand)
 	fmt.Println("=-= PART 2 =-=")
 	fmt.Println("=-= Visual =-=")
 
@@ -297,6 +301,7 @@ func main() {
 	for i := range grid {
 		sandVisual[i] = make([]bool, len(grid[0]))
 	}
+  fmt.Println(len(sandVisual[0]), len(grid[0]))
 
 	fmt.Print(GridToString(grid, sandVisual, 3))
 
@@ -308,14 +313,14 @@ func main() {
 
 	clear := clearBuild.String()
 
-  for {
-    nextSand := FindNextSandPosition(grid, sandVisual, left, depth)
-    if nextSand.y == -1 {
-      break
-    }
-    sandVisual[nextSand.y][nextSand.x - left] = true
-    time.Sleep(5 * time.Millisecond)
-    fmt.Println(clear)
-    fmt.Print(GridToString(grid, sandVisual, 3))
-  }
+	for {
+		nextSand := FindNextSandPosition(grid, sandVisual, left, depth)
+		if nextSand.y == -1 {
+			break
+		}
+		sandVisual[nextSand.y][nextSand.x-left] = true
+		time.Sleep(5 * time.Millisecond)
+		fmt.Println(clear)
+		fmt.Print(GridToString(grid, sandVisual, 3))
+	}
 }
