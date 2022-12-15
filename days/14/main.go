@@ -103,10 +103,10 @@ func UpdateBounds(total, current Bounds) Bounds {
 	return total
 }
 
-func GridToString(grid, sand Grid, columns int) string {
+func GridToString(grid, sand Grid, columns, padding int) string {
 	var result strings.Builder
 
-	width := len(grid[0])
+	width := len(grid[0]) - 2 * padding
 	height := len(grid)
 	offset := height / columns
 
@@ -114,11 +114,13 @@ func GridToString(grid, sand Grid, columns int) string {
 		for j := 0; j < columns; j++ {
 			row := grid[i+j*offset]
 			for k, value := range row {
+        if k < padding || len(row) - k < padding {
+          continue
+        }
 				sand := sand[i+j*offset][k]
 				if value || i+j*offset == len(grid) - 1 {
 					result.WriteString("\x1b[48;2;68;64;60m#\x1b[0m")
 				} else if sand {
-					//fa cc 15
 					result.WriteString("\x1b[38;2;250;204;21m\x1b[48;2;68;64;60mO\x1b[0m")
 				} else {
 					result.WriteString("\x1b[48;2;87;83;78m.\x1b[0m")
@@ -244,9 +246,9 @@ func main() {
 
 	wait.Wait()
 
-	width := totalBounds.right - totalBounds.left
 	depth := totalBounds.bottom + 2
-	left := totalBounds.left
+	width := totalBounds.right - totalBounds.left + depth * 2
+	left := totalBounds.left - depth
 
 	grid := make(Grid, depth+1)
 	for i := range grid {
@@ -303,7 +305,7 @@ func main() {
 	}
   fmt.Println(len(sandVisual[0]), len(grid[0]))
 
-	fmt.Print(GridToString(grid, sandVisual, 3))
+	fmt.Print(GridToString(grid, sandVisual, 3, depth))
 
 	numLines := len(grid)/3 + len(grid)%3 + 1
 	var clearBuild strings.Builder
@@ -321,6 +323,6 @@ func main() {
 		sandVisual[nextSand.y][nextSand.x-left] = true
 		time.Sleep(5 * time.Millisecond)
 		fmt.Println(clear)
-		fmt.Print(GridToString(grid, sandVisual, 3))
+		fmt.Print(GridToString(grid, sandVisual, 3, depth))
 	}
 }
