@@ -115,7 +115,7 @@ func GridToString(grid, sand Grid, columns int) string {
 			row := grid[i+j*offset]
 			for k, value := range row {
 				sand := sand[i+j*offset][k]
-				if value {
+				if value || i+j*offset == len(grid) - 1 {
 					result.WriteString("\x1b[48;2;68;64;60m#\x1b[0m")
 				} else if sand {
 					//fa cc 15
