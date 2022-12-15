@@ -143,6 +143,7 @@ func GridToString(grid, sand Grid, columns int) string {
 			}
 		}
 		result.WriteRune(' ')
+		result.WriteRune('\n')
 	}
 
 	return result.String()
@@ -240,7 +241,7 @@ func main() {
 	wait.Wait()
 
 	width := totalBounds.right - totalBounds.left
-	depth := totalBounds.bottom
+	depth := totalBounds.bottom + 1
 	left := totalBounds.left
 
 	grid := make(Grid, depth+1)
@@ -299,7 +300,7 @@ func main() {
 
 	fmt.Print(GridToString(grid, sandVisual, 3))
 
-	numLines := len(grid)/3 + len(grid)%3
+	numLines := len(grid)/3 + len(grid)%3 + 1
 	var clearBuild strings.Builder
 	for i := 0; i < numLines; i++ {
 		clearBuild.WriteString("\x1b[1A")
