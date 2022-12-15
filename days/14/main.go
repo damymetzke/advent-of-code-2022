@@ -102,19 +102,43 @@ func UpdateBounds(total, current Bounds) Bounds {
 	return total
 }
 
-func GridToString(grid Grid) string {
+func GridToString(grid Grid, columns int) string {
 	var result strings.Builder
 
-	for _, row := range grid {
-		for _, value := range row {
-			if value {
-				result.WriteRune('#')
-			} else {
-				result.WriteRune('.')
-			}
-		}
+  width := len(grid[0])
+  height := len(grid)
+  offset := height / columns
+
+  for i := 0; i < len(grid) / columns; i++ {
+    for j := 0; j < columns; j++ {
+      row := grid[i + j * offset]
+      for _, value := range row {
+        if value {
+          result.WriteRune('#')
+        } else {
+          result.WriteRune('.')
+        }
+      }
+      result.WriteRune(' ')
+    }
 		result.WriteRune('\n')
-	}
+  }
+
+  for i := 0; i < height % 3; i++ {
+    for j := 0; j < (width + 1) * (columns - 1); j++ {
+      result.WriteRune(' ')
+    }
+
+    row := grid[len(grid) - height % 3 + i]
+      for _, value := range row {
+        if value {
+          result.WriteRune('#')
+        } else {
+          result.WriteRune('.')
+        }
+      }
+      result.WriteRune(' ')
+  }
 
 	return result.String()
 }
@@ -213,5 +237,5 @@ func main() {
 	fmt.Println("=-= PART 2 =-=")
   fmt.Println("=-= Visual =-=")
 
-	fmt.Println(GridToString(grid))
+	fmt.Println(GridToString(grid, 3))
 }
