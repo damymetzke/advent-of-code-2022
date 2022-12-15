@@ -1,0 +1,3 @@
+#! /usr/bin/env bash
+
+find days/ | entr ./build-and-run $1

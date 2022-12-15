@@ -1,0 +1,8 @@
+#! /usr/bin/env bash
+
+make
+
+echo "=== Output ==="
+echo
+
+bin/$1
