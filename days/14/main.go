@@ -105,40 +105,40 @@ func UpdateBounds(total, current Bounds) Bounds {
 func GridToString(grid Grid, columns int) string {
 	var result strings.Builder
 
-  width := len(grid[0])
-  height := len(grid)
-  offset := height / columns
+	width := len(grid[0])
+	height := len(grid)
+	offset := height / columns
 
-  for i := 0; i < len(grid) / columns; i++ {
-    for j := 0; j < columns; j++ {
-      row := grid[i + j * offset]
-      for _, value := range row {
-        if value {
-          result.WriteRune('#')
-        } else {
-          result.WriteRune('.')
-        }
-      }
-      result.WriteRune(' ')
-    }
+	for i := 0; i < len(grid)/columns; i++ {
+		for j := 0; j < columns; j++ {
+			row := grid[i+j*offset]
+			for _, value := range row {
+				if value {
+          result.WriteString("\x1b[48;2;68;64;60m#\x1b[0m")
+				} else {
+          result.WriteString("\x1b[48;2;87;83;78m.\x1b[0m")
+				}
+			}
+			result.WriteRune(' ')
+		}
 		result.WriteRune('\n')
-  }
+	}
 
-  for i := 0; i < height % 3; i++ {
-    for j := 0; j < (width + 1) * (columns - 1); j++ {
-      result.WriteRune(' ')
-    }
+	for i := 0; i < height%3; i++ {
+		for j := 0; j < (width+1)*(columns-1); j++ {
+			result.WriteRune(' ')
+		}
 
-    row := grid[len(grid) - height % 3 + i]
-      for _, value := range row {
-        if value {
-          result.WriteRune('#')
-        } else {
-          result.WriteRune('.')
-        }
-      }
-      result.WriteRune(' ')
-  }
+		row := grid[len(grid)-height%3+i]
+		for _, value := range row {
+			if value {
+          result.WriteString("\x1b[48;2;68;64;60m#\x1b[0m")
+			} else {
+          result.WriteString("\x1b[48;2;87;83;78m.\x1b[0m")
+			}
+		}
+		result.WriteRune(' ')
+	}
 
 	return result.String()
 }
@@ -204,9 +204,9 @@ func main() {
 	depth := totalBounds.bottom
 	left := totalBounds.left
 
-	grid := make(Grid, depth + 1)
+	grid := make(Grid, depth+1)
 	for i := range grid {
-		grid[i] = make([]bool, width + 1)
+		grid[i] = make([]bool, width+1)
 	}
 
 	for _, path := range paths {
@@ -215,27 +215,26 @@ func main() {
 
 		go func() {
 			for j := 0; j < len(currentPath)-1; j++ {
-        delta := GetPathDelta(currentPath[j], currentPath[j+1])
-        follow := currentPath[j]
+				delta := GetPathDelta(currentPath[j], currentPath[j+1])
+				follow := currentPath[j]
 
-        for follow != currentPath[j+1] {
-          grid[follow.y][follow.x - left] = true
-          follow.x += delta.x
-          follow.y += delta.y
-        }
+				for follow != currentPath[j+1] {
+					grid[follow.y][follow.x-left] = true
+					follow.x += delta.x
+					follow.y += delta.y
+				}
 			}
-      end := currentPath[len(currentPath) - 1]
-      grid[end.y][end.x - left] = true
+			end := currentPath[len(currentPath)-1]
+			grid[end.y][end.x-left] = true
 			wait.Done()
 		}()
 	}
 
 	wait.Wait()
 
-
 	fmt.Println("=-= PART 1 =-=")
 	fmt.Println("=-= PART 2 =-=")
-  fmt.Println("=-= Visual =-=")
+	fmt.Println("=-= Visual =-=")
 
 	fmt.Println(GridToString(grid, 3))
 }
