@@ -137,7 +137,7 @@ func GenerateOptimizedGraph(graphChannel <-chan Graph) <-chan Graph {
 		nodeMap := make(map[string]*GraphNode)
 
 		for _, node := range fullGraph.nodes {
-			if node.valve.rate == 0 {
+			if node.valve.rate == 0 && node.valve.name != "AA" {
 				continue
 			}
 
@@ -158,7 +158,7 @@ func GenerateOptimizedGraph(graphChannel <-chan Graph) <-chan Graph {
 							edges: []GraphEdge{},
 						}
 						nodeMap[item.valve.name] = currentValue
-            if item.valve.rate > 0 {
+            if item.valve.rate > 0 || item.valve.name == "AA" {
               graph.nodes = append(graph.nodes, currentValue)
             }
 					}
@@ -192,13 +192,42 @@ func GenerateOptimizedGraph(graphChannel <-chan Graph) <-chan Graph {
 			nodeMap[node.valve.name].edges = nextEdges
 		}
 
-    graph.root = nodeMap["aa"]
+    graph.root = nodeMap["AA"]
 
 		result <- graph
 		close(result)
 	}()
 
 	return result
+}
+
+func FindHeighestScore(node *GraphNode, stepsLeft, losingPressure int, visited []*GraphNode) int {
+  max := stepsLeft * losingPressure
+  outerLoop:
+  for _, edge := range node.edges {
+    // Don't visit twice
+    for _, checkVisited := range visited {
+      if edge.node == checkVisited {
+        continue outerLoop
+      }
+    }
+
+    // Not enough time
+    if edge.steps + 1 > stepsLeft {
+      continue
+    }
+
+    score := FindHeighestScore(edge.node, stepsLeft - (edge.steps + 1), losingPressure + edge.node.valve.rate, append(visited, edge.node)) + (edge.steps + 1) * losingPressure
+    if score > max {
+      max = score
+    }
+  }
+  return max
+}
+
+func SolvePart1(graph <-chan Graph) int {
+  value := <-graph
+  return FindHeighestScore(value.root, 30, 0, []*GraphNode{value.root})
 }
 
 func main() {
@@ -211,8 +240,6 @@ func main() {
 	optimizedGraph := GenerateOptimizedGraph(graph)
 
 	fmt.Println("=-= PART 1 =-=")
-  for _, node := range (<-optimizedGraph).nodes {
-    fmt.Println(*node)
-  }
+  fmt.Println(SolvePart1(optimizedGraph))
 	fmt.Println("=-= PART 2 =-=")
 }
