@@ -64,24 +64,24 @@ func ParseLine(line string) Valve {
 }
 
 func ParseAllLines(lines []string) <-chan Valve {
-  result := make(chan Valve, len(lines))
-  var wait sync.WaitGroup
+	result := make(chan Valve, len(lines))
+	var wait sync.WaitGroup
 
-  go func(){
-    for _, line := range lines {
-      current := line
-      wait.Add(1)
-      go func(){
-        result <- ParseLine(current)
-        wait.Done()
-      }()
-    }
+	go func() {
+		for _, line := range lines {
+			current := line
+			wait.Add(1)
+			go func() {
+				result <- ParseLine(current)
+				wait.Done()
+			}()
+		}
 
-    wait.Wait()
-    close(result)
-  }()
+		wait.Wait()
+		close(result)
+	}()
 
-  return result
+	return result
 }
 
 func UpdateGraph(graph *Graph, valve Valve) {
@@ -107,39 +107,112 @@ func UpdateGraph(graph *Graph, valve Valve) {
 	}
 
 	graph.nodes = append(graph.nodes, next)
-  if valve.name == "AA" {
-    graph.root = next
-  }
+	if valve.name == "AA" {
+		graph.root = next
+	}
 }
 
 func BuildGraph(valves <-chan Valve) <-chan Graph {
-  result := make(chan Graph, 1)
+	result := make(chan Graph, 1)
 
-  go func(){
-    var graph Graph 
-    for valve := range valves {
-      UpdateGraph(&graph, valve)
-    }
+	go func() {
+		var graph Graph
+		for valve := range valves {
+			UpdateGraph(&graph, valve)
+		}
 
-    result <- graph
-    close(result)
-  }()
+		result <- graph
+		close(result)
+	}()
 
-  return result
+	return result
+}
+
+func GenerateOptimizedGraph(graphChannel <-chan Graph) <-chan Graph {
+	result := make(chan Graph, 1)
+
+	go func() {
+		fullGraph := <-graphChannel
+		var graph Graph
+		nodeMap := make(map[string]*GraphNode)
+
+		for _, node := range fullGraph.nodes {
+			if node.valve.rate == 0 {
+				continue
+			}
+
+			var nextEdges []GraphEdge
+
+			visited := []*GraphNode{node}
+			backlog := []*GraphNode{node}
+			nextBacklog := []*GraphNode{node}
+
+			step := 0
+
+			for len(backlog) != 0 {
+				for _, item := range backlog {
+					currentValue, currentValueOk := nodeMap[item.valve.name]
+					if !currentValueOk {
+						currentValue = &GraphNode{
+							valve: item.valve,
+							edges: []GraphEdge{},
+						}
+						nodeMap[item.valve.name] = currentValue
+            if item.valve.rate > 0 {
+              graph.nodes = append(graph.nodes, currentValue)
+            }
+					}
+
+					if step != 0 && item.valve.rate > 0 {
+
+						nextEdges = append(nextEdges, GraphEdge{
+							node:  currentValue,
+							steps: step,
+						})
+					}
+
+				checkEdge:
+					for _, edge := range item.edges {
+						for _, checkVisisted := range visited {
+							if edge.node == checkVisisted {
+								continue checkEdge
+							}
+						}
+
+						nextBacklog = append(nextBacklog, edge.node)
+            visited = append(visited, edge.node)
+					}
+				}
+
+				backlog = nextBacklog
+				nextBacklog = []*GraphNode{}
+				step++
+			}
+
+			nodeMap[node.valve.name].edges = nextEdges
+		}
+
+    graph.root = nodeMap["aa"]
+
+		result <- graph
+		close(result)
+	}()
+
+	return result
 }
 
 func main() {
 	lines := strings.Split(GetInput(), "\n")
 
-  valves := ParseAllLines(lines)
+	valves := ParseAllLines(lines)
 
-  graph := <- BuildGraph(valves)
+	graph := BuildGraph(valves)
 
-  fmt.Println(*graph.root)
-  for _, node := range graph.nodes {
-    fmt.Println(*node)
-  }
+	optimizedGraph := GenerateOptimizedGraph(graph)
 
 	fmt.Println("=-= PART 1 =-=")
+  for _, node := range (<-optimizedGraph).nodes {
+    fmt.Println(*node)
+  }
 	fmt.Println("=-= PART 2 =-=")
 }
