@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type Valve struct {
@@ -62,6 +63,27 @@ func ParseLine(line string) Valve {
 	}
 }
 
+func ParseAllLines(lines []string) <-chan Valve {
+  result := make(chan Valve, len(lines))
+  var wait sync.WaitGroup
+
+  go func(){
+    for _, line := range lines {
+      current := line
+      wait.Add(1)
+      go func(){
+        result <- ParseLine(current)
+        wait.Done()
+      }()
+    }
+
+    wait.Wait()
+    close(result)
+  }()
+
+  return result
+}
+
 func UpdateGraph(graph *Graph, valve Valve) {
 	next := &GraphNode{
 		valve: valve,
@@ -90,25 +112,28 @@ func UpdateGraph(graph *Graph, valve Valve) {
   }
 }
 
+func BuildGraph(valves <-chan Valve) <-chan Graph {
+  result := make(chan Graph, 1)
+
+  go func(){
+    var graph Graph 
+    for valve := range valves {
+      UpdateGraph(&graph, valve)
+    }
+
+    result <- graph
+    close(result)
+  }()
+
+  return result
+}
+
 func main() {
 	lines := strings.Split(GetInput(), "\n")
 
-	valveChannel := make(chan Valve, len(lines))
+  valves := ParseAllLines(lines)
 
-	for _, line := range lines {
-		value := line
-		go func() {
-			valveChannel <- ParseLine(value)
-		}()
-	}
-
-	valves := make([]Valve, len(lines))
-  var graph Graph
-
-	for i := 0; i < len(valves); i++ {
-		valves[i] = <-valveChannel
-    UpdateGraph(&graph, valves[i])
-	}
+  graph := <- BuildGraph(valves)
 
   fmt.Println(*graph.root)
   for _, node := range graph.nodes {
