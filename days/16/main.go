@@ -7,28 +7,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
+	"damymetzke.com/advent-of-code-2022/d16/score_p1"
+	. "damymetzke.com/advent-of-code-2022/d16/shared"
 )
-
-type Valve struct {
-	name  string
-	rate  int
-	edges []string
-}
-
-type GraphEdge struct {
-	node  *GraphNode
-	steps int
-}
-
-type GraphNode struct {
-	valve Valve
-	edges []GraphEdge
-}
-
-type Graph struct {
-	root  *GraphNode
-	nodes []*GraphNode
-}
 
 func GetInput() string {
 	data, err := os.ReadFile("input/16")
@@ -57,9 +39,9 @@ func ParseLine(line string) Valve {
 		log.Fatalf("Could not parse line '%v'", line)
 	}
 	return Valve{
-		name:  name,
-		rate:  int(rate),
-		edges: edges,
+		Name:  name,
+		Rate:  int(rate),
+		Edges: edges,
 	}
 }
 
@@ -86,29 +68,29 @@ func ParseAllLines(lines []string) <-chan Valve {
 
 func UpdateGraph(graph *Graph, valve Valve) {
 	next := &GraphNode{
-		valve: valve,
-		edges: []GraphEdge{},
+		Valve: valve,
+		Edges: []GraphEdge{},
 	}
 
-	for _, edge := range valve.edges {
-		for i := range graph.nodes {
-			if graph.nodes[i].valve.name == edge {
-				graph.nodes[i].edges = append(graph.nodes[i].edges, GraphEdge{
-					node:  next,
-					steps: 1,
+	for _, edge := range valve.Edges {
+		for i := range graph.Nodes {
+			if graph.Nodes[i].Valve.Name == edge {
+				graph.Nodes[i].Edges = append(graph.Nodes[i].Edges, GraphEdge{
+					Node:  next,
+					Steps: 1,
 				})
 
-				next.edges = append(next.edges, GraphEdge{
-					node:  graph.nodes[i],
-					steps: 1,
+				next.Edges = append(next.Edges, GraphEdge{
+					Node:  graph.Nodes[i],
+					Steps: 1,
 				})
 			}
 		}
 	}
 
-	graph.nodes = append(graph.nodes, next)
-	if valve.name == "AA" {
-		graph.root = next
+	graph.Nodes = append(graph.Nodes, next)
+	if valve.Name == "AA" {
+		graph.Root = next
 	}
 }
 
@@ -136,8 +118,8 @@ func GenerateOptimizedGraph(graphChannel <-chan Graph) <-chan Graph {
 		var graph Graph
 		nodeMap := make(map[string]*GraphNode)
 
-		for _, node := range fullGraph.nodes {
-			if node.valve.rate == 0 && node.valve.name != "AA" {
+		for _, node := range fullGraph.Nodes {
+			if node.Valve.Rate == 0 && node.Valve.Name != "AA" {
 				continue
 			}
 
@@ -151,36 +133,36 @@ func GenerateOptimizedGraph(graphChannel <-chan Graph) <-chan Graph {
 
 			for len(backlog) != 0 {
 				for _, item := range backlog {
-					currentValue, currentValueOk := nodeMap[item.valve.name]
+					currentValue, currentValueOk := nodeMap[item.Valve.Name]
 					if !currentValueOk {
 						currentValue = &GraphNode{
-							valve: item.valve,
-							edges: []GraphEdge{},
+							Valve: item.Valve,
+							Edges: []GraphEdge{},
 						}
-						nodeMap[item.valve.name] = currentValue
-            if item.valve.rate > 0 || item.valve.name == "AA" {
-              graph.nodes = append(graph.nodes, currentValue)
-            }
+						nodeMap[item.Valve.Name] = currentValue
+						if item.Valve.Rate > 0 || item.Valve.Name == "AA" {
+							graph.Nodes = append(graph.Nodes, currentValue)
+						}
 					}
 
-					if step != 0 && item.valve.rate > 0 {
+					if step != 0 && item.Valve.Rate > 0 {
 
 						nextEdges = append(nextEdges, GraphEdge{
-							node:  currentValue,
-							steps: step,
+							Node:  currentValue,
+							Steps: step,
 						})
 					}
 
 				checkEdge:
-					for _, edge := range item.edges {
+					for _, edge := range item.Edges {
 						for _, checkVisisted := range visited {
-							if edge.node == checkVisisted {
+							if edge.Node == checkVisisted {
 								continue checkEdge
 							}
 						}
 
-						nextBacklog = append(nextBacklog, edge.node)
-            visited = append(visited, edge.node)
+						nextBacklog = append(nextBacklog, edge.Node)
+						visited = append(visited, edge.Node)
 					}
 				}
 
@@ -189,10 +171,10 @@ func GenerateOptimizedGraph(graphChannel <-chan Graph) <-chan Graph {
 				step++
 			}
 
-			nodeMap[node.valve.name].edges = nextEdges
+			nodeMap[node.Valve.Name].Edges = nextEdges
 		}
 
-    graph.root = nodeMap["AA"]
+		graph.Root = nodeMap["AA"]
 
 		result <- graph
 		close(result)
@@ -202,32 +184,47 @@ func GenerateOptimizedGraph(graphChannel <-chan Graph) <-chan Graph {
 }
 
 func FindHeighestScore(node *GraphNode, stepsLeft, losingPressure int, visited []*GraphNode) int {
-  max := stepsLeft * losingPressure
-  outerLoop:
-  for _, edge := range node.edges {
-    // Don't visit twice
-    for _, checkVisited := range visited {
-      if edge.node == checkVisited {
-        continue outerLoop
-      }
-    }
+	max := stepsLeft * losingPressure
+outerLoop:
+	for _, edge := range node.Edges {
+		// Don't visit twice
+		for _, checkVisited := range visited {
+			if edge.Node == checkVisited {
+				continue outerLoop
+			}
+		}
 
-    // Not enough time
-    if edge.steps + 1 > stepsLeft {
-      continue
-    }
+		// Not enough time
+		if edge.Steps+1 > stepsLeft {
+			continue
+		}
 
-    score := FindHeighestScore(edge.node, stepsLeft - (edge.steps + 1), losingPressure + edge.node.valve.rate, append(visited, edge.node)) + (edge.steps + 1) * losingPressure
-    if score > max {
-      max = score
-    }
-  }
-  return max
+		score := FindHeighestScore(edge.Node, stepsLeft-(edge.Steps+1), losingPressure+edge.Node.Valve.Rate, append(visited, edge.Node)) + (edge.Steps+1)*losingPressure
+		if score > max {
+			max = score
+		}
+	}
+	return max
 }
 
 func SolvePart1(graph <-chan Graph) int {
-  value := <-graph
-  return FindHeighestScore(value.root, 30, 0, []*GraphNode{value.root})
+	value := <-graph
+	return FindHeighestScore(value.Root, 30, 0, []*GraphNode{value.Root})
+}
+
+func ForkGraph(graph <-chan Graph) (<-chan Graph, <-chan Graph) {
+  left := make(chan Graph, 1)
+  right := make(chan Graph, 1)
+
+  go func(){
+    result := <-graph
+    left <- result
+    right <-result
+    close(left)
+    close(right)
+  }()
+
+  return left, right
 }
 
 func main() {
@@ -237,9 +234,10 @@ func main() {
 
 	graph := BuildGraph(valves)
 
-	optimizedGraph := GenerateOptimizedGraph(graph)
+	graph1, graph2 := ForkGraph(GenerateOptimizedGraph(graph))
 
 	fmt.Println("=-= PART 1 =-=")
-  fmt.Println(SolvePart1(optimizedGraph))
+	fmt.Println(SolvePart1(graph1))
 	fmt.Println("=-= PART 2 =-=")
+  fmt.Println(score_p1.SolvePart2(graph2))
 }
