@@ -24,27 +24,6 @@ func GetInput() <-chan string {
 }
 
 func main() {
-	// fmt.Println(<-GetInput())
-	fmt.Println("=-= PART 1 =-=")
-	fmt.Println("=-= PART 2 =-=")
-
-	fmt.Println("=-= Visual =-=")
-
-	var a, b, c BoardDisplay
-
-	for i := 0; i < 40; i++ {
-		a[i] = [7]DisplayType{
-			StandingRock, Empty, Empty, FallingRock, Empty, Empty, StandingRock,
-		}
-
-		b[i] = [7]DisplayType{
-			StandingRock, Empty, FallingRock, FallingRock, FallingRock, Empty, StandingRock,
-		}
-
-		c[i] = [7]DisplayType{
-			StandingRock, Empty, FallingRock, Empty, FallingRock, Empty, StandingRock,
-		}
-	}
 
 	input := make(chan StateCollection, 3)
 
@@ -70,6 +49,14 @@ func main() {
   }
   close(input)
 
-	output.Output(output.StateToDisplay(input))
+  visualChannel := output.StateToDisplay(input)
+
+	// fmt.Println(<-GetInput())
+	fmt.Println("=-= PART 1 =-=")
+	fmt.Println("=-= PART 2 =-=")
+
+	fmt.Println("=-= Visual =-=")
+
+	output.Output(visualChannel)
 
 }
