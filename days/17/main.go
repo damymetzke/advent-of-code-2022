@@ -37,6 +37,11 @@ func main() {
 
 	input <- StateCollection{
 		Board: board,
+    PieceType: 1,
+    PiecePosition: Position {
+      X: 2,
+      Y: 37,
+    },
 	}
 
   for i := 0; i < 10; i++ {
@@ -46,6 +51,11 @@ func main() {
   }
   input <- StateCollection{
     Board: board,
+    PieceType: 1,
+    PiecePosition: Position {
+      X: 2,
+      Y: 47,
+    },
   }
   close(input)
 

@@ -85,7 +85,7 @@ func StateToDisplay(input <-chan StateCollection) <-chan BoardDisplay {
 
 	go func() {
 		for state := range input {
-			bottom := len(state.Board) - 40
+			bottom := len(state.Board) - 30
 			if bottom < 0 {
 				bottom = 0
 			}
@@ -95,6 +95,16 @@ func StateToDisplay(input <-chan StateCollection) <-chan BoardDisplay {
 				result[i] = [7]DisplayType{
 					Empty, Empty, Empty, Empty, Empty, Empty, Empty,
 				}
+
+        for _, position := range GetPiece(state.PieceType) {
+          y := state.PiecePosition.Y + position.Y
+
+          if y == bottom + 39 - i {
+            x := state.PiecePosition.X + position.X
+            result[i][x] = FallingRock
+          }
+
+        }
 
 				if bottom+39-i >= len(state.Board) {
 					continue
