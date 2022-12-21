@@ -1,5 +1,11 @@
 package shared
 
+type Board [][7]bool
+
+type StateCollection struct {
+  Board Board
+}
+
 type DisplayType uint8
 
 const (
